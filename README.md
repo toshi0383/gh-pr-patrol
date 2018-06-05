@@ -33,7 +33,13 @@ GITHUB_REPOSITORY=toshi0383/Bitrise-iOS GITHUB_API_TOKEN= ... gh-pr-patrol
 ```
 
 # Install
-Binary install is recommended for CI usage, but you can build from source.
+## Binary install
+This is recommended for CI usage.
+```
+bash <(curl -sL https://raw.githubusercontent.com/toshi0383/scripts/master/swiftpm/install.sh) toshi0383/gh-pr-patrol
+```
+
+## Build from source using following tools.
 
 - SwiftPM
 - Mint
