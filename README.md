@@ -14,7 +14,7 @@ Currently supports only Bitrise. For other CI services, PRs are welcomed!
 # Required environment variables
 
 - `GITHUB_REPOSITORY` ... e.g. `toshi0383/Bitrise-iOS`
-- `GITHUB_API_TOKEN`
+- `GITHUB_ACCESS_TOKEN`
 - `BITRISE_API_TOKEN`
 - `BITRISE_BUILD_TRIGGER_TOKEN`
 - `APP_SLUG`
@@ -29,7 +29,7 @@ Currently supports only Bitrise. For other CI services, PRs are welcomed!
 Otherwise you can always use this syntax to do that in one-line.
 
 ```
-GITHUB_REPOSITORY=toshi0383/Bitrise-iOS GITHUB_API_TOKEN= ... gh-pr-patrol
+GITHUB_REPOSITORY=toshi0383/Bitrise-iOS GITHUB_ACCESS_TOKEN= ... gh-pr-patrol
 ```
 
 # Install

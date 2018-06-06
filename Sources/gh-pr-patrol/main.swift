@@ -27,7 +27,7 @@ struct PRBuildStatus: Decodable {
 
 let env = ProcessInfo.processInfo.environment
 guard let _ghRepo = env["GITHUB_REPOSITORY"],
-    let _ghApiToken: String = env["GITHUB_API_TOKEN"],
+    let _ghApiToken: String = env["GITHUB_ACCESS_TOKEN"],
     let _bitriseApiToken = env["BITRISE_API_TOKEN"],
     let _bitriseBuildTriggerToken = env["BITRISE_BUILD_TRIGGER_TOKEN"],
     let _appSlug = env["APP_SLUG"] else {
