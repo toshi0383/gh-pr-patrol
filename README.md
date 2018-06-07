@@ -22,6 +22,7 @@ Currently supports only Bitrise. For other CI services, PRs are welcomed!
 # Options
 
 - `-i interval` ... Current time minus interval is the threshold to determine if it's "outdated".
+- `-f [workflowID]` ... Specify comma separated workflowIDs which you want to trigger rebuild. Useful when multiple builds are triggered by single pull-request push.
 
 # How to use
 `export` environment variables above and execute.
