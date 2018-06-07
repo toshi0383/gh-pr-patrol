@@ -43,7 +43,7 @@ let bitriseBuildTriggerToken = _bitriseBuildTriggerToken // Avoid compiler segme
 
 let workflowFilters: [String]? = {
     let args = ProcessInfo.processInfo.arguments
-    if let idx = args.index(of: "-f"), args.count - 1 > idx + 1 {
+    if let idx = args.index(of: "-f"), args.count > idx + 1 {
         let arg =  String(args[idx + 1])
         return arg.split(separator: ",").map(String.init)
     }
@@ -52,7 +52,7 @@ let workflowFilters: [String]? = {
 
 let outdateInterval: Double? = {
     let args = ProcessInfo.processInfo.arguments
-    if let idx = args.index(of: "-i"), args.count - 1 > idx + 1 {
+    if let idx = args.index(of: "-i"), args.count > idx + 1 {
         return Double(args[idx + 1])
     }
     return nil
