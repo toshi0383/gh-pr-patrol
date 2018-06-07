@@ -41,6 +41,15 @@ let ghApiToken = _ghApiToken // Avoid compiler segmentation fault
 let bitriseApiToken = _bitriseApiToken // Avoid compiler segmentation fault
 let bitriseBuildTriggerToken = _bitriseBuildTriggerToken // Avoid compiler segmentation fault
 
+let workflowFilters: [String]? = {
+    let args = ProcessInfo.processInfo.arguments
+    if let idx = args.index(of: "-f"), args.count - 1 > idx + 1 {
+        let arg =  String(args[idx + 1])
+        return arg.split(separator: ",").map(String.init)
+    }
+    return nil
+}()
+
 let outdateInterval: Double? = {
     let args = ProcessInfo.processInfo.arguments
     if let idx = args.index(of: "-i"), args.count - 1 > idx + 1 {
@@ -84,7 +93,8 @@ func decrement() {
 
 /// 1. Get build's "original_build_params"
 /// 2. Trigger build with the "original_build_params" as "build_params".
-func triggerRebuild(_ buildSlug: String) {
+func triggerRebuild(_ buildSlugs: [String]) {
+    let buildSlug = buildSlugs.first!
 
     let url = URL(string: "https://api.bitrise.io/v0.1/apps/\(appSlug)/builds/\(buildSlug)")!
     var req = URLRequest(url: url)
@@ -95,7 +105,18 @@ func triggerRebuild(_ buildSlug: String) {
         }
         if let json = try! JSONSerialization.jsonObject(with: data!, options: []) as? JSON {
             if let data = json["data"] as? JSON,
+                let triggeredWorkflow = data["triggered_workflow"] as? String,
                 let originalBuildParams = data["original_build_params"] as? JSON {
+
+                if let workflowFilters = workflowFilters, !workflowFilters.contains(triggeredWorkflow) {
+                    let next = buildSlugs.dropFirst()
+                    if next.isEmpty {
+                        decrement()
+                    } else {
+                        triggerRebuild(Array(next))
+                    }
+                    return
+                }
 
                 let url = URL(string: "https://app.bitrise.io/app/\(appSlug)/build/start.json")!
                 var req = URLRequest(url: url)
@@ -151,29 +172,34 @@ func rebuildIfNeededForEachTarget() {
                 decoder.dateDecodingStrategy = .iso8601
             }
 
-            // Assuming the first one is the last build.
-            if let json = (try! JSONSerialization.jsonObject(with: data, options: []) as! [JSON]).first {
+            let jsons = try! JSONSerialization.jsonObject(with: data, options: []) as! [JSON]
+
+            let buildSlugs = jsons.compactMap { json -> String? in
 
                 let data = try! JSONSerialization.data(withJSONObject: json, options: [])
                 let status = try! decoder.decode(PRBuildStatus.self, from: data)
                 if status.state != "success" {
-                    decrement()
-                    return
+                    return nil
                 }
 
                 let interval: Double = outdateInterval ?? 60 * 60 * 24
                 if abs(status.created_at.timeIntervalSinceNow) < interval {
-                    decrement()
-                    return
+                    return nil
                 }
 
-                // trigger rebuild
                 let buildSlug = status.target_url.split(separator: "/").last!
 
-                print("triggering rebuild for PR: #\(target.number)")
-
-                triggerRebuild(String(buildSlug))
+                return String(buildSlug)
             }
+
+            if buildSlugs.isEmpty {
+                decrement()
+                return
+            }
+
+            // trigger rebuild
+            print("triggering rebuild for PR: #\(target.number)")
+            triggerRebuild(buildSlugs)
         }.resume()
     }
 }
