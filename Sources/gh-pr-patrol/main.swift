@@ -3,6 +3,11 @@
 
 import Foundation
 
+if ProcessInfo.processInfo.arguments.contains("-v") {
+    print("0.1.3")
+    exit(0)
+}
+
 if #available(OSX 10.12, *) {
 } else {
     fatalError("Update your macOS. Sierra or later is the deployment target.")
