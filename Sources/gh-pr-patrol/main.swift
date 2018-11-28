@@ -28,6 +28,12 @@ struct PRBuildStatus: Decodable {
     let target_url: String
 }
 
+struct TriggerBuildOrigin {
+    let target: Target
+    let buildSlug: String
+    let status: PRBuildStatus
+}
+
 // - MARK: Arguments and Environments
 
 let env = ProcessInfo.processInfo.environment
@@ -61,6 +67,11 @@ let outdateInterval: Double? = {
         return Double(args[idx + 1])
     }
     return nil
+}()
+
+let dryRun: Bool = {
+    let args = ProcessInfo.processInfo.arguments
+    return args.contains("--dry-run")
 }()
 
 // - MARK: Utilities
@@ -98,28 +109,42 @@ func decrement() {
 
 /// 1. Get build's "original_build_params"
 /// 2. Trigger build with the "original_build_params" as "build_params".
-func triggerRebuild(_ buildSlugs: [String]) {
-    let buildSlug = buildSlugs.first!
+func triggerRebuild(_ triggerBuildOrigins: [TriggerBuildOrigin]) {
+    let origin = triggerBuildOrigins.first!
 
-    let url = URL(string: "https://api.bitrise.io/v0.1/apps/\(appSlug)/builds/\(buildSlug)")!
+    let url = URL(string: "https://api.bitrise.io/v0.1/apps/\(appSlug)/builds/\(origin.buildSlug)")!
     var req = URLRequest(url: url)
+
     req.addValue("token \(bitriseApiToken)", forHTTPHeaderField: "Authorization")
+
     URLSession.shared.dataTask(with: req) { data, res, err in
         if (res as? HTTPURLResponse)?.statusCode != 200 {
-            fatalError("Failed to get build for buildSlug: \(buildSlug). statusCode: \(String(describing: (res as? HTTPURLResponse)?.statusCode))")
+            fatalError("Failed to get build for buildSlug: \(origin.buildSlug). statusCode: \(String(describing: (res as? HTTPURLResponse)?.statusCode))")
         }
+
         if let json = try! JSONSerialization.jsonObject(with: data!, options: []) as? JSON {
             if let data = json["data"] as? JSON,
                 let triggeredWorkflow = data["triggered_workflow"] as? String,
                 let originalBuildParams = data["original_build_params"] as? JSON {
 
                 if let workflowFilters = workflowFilters, !workflowFilters.contains(triggeredWorkflow) {
-                    let next = buildSlugs.dropFirst()
+                    let next = triggerBuildOrigins.dropFirst()
                     if next.isEmpty {
                         decrement()
                     } else {
                         triggerRebuild(Array(next))
                     }
+                    return
+                }
+
+                if origin.status.state != "success" {
+                    decrement()
+                    return
+                }
+
+                let interval: Double = outdateInterval ?? 60 * 60 * 24
+                if abs(origin.status.created_at.timeIntervalSinceNow) < interval {
+                    decrement()
                     return
                 }
 
@@ -134,6 +159,13 @@ func triggerRebuild(_ buildSlugs: [String]) {
 
                 req.httpBody = try! JSONSerialization.data(withJSONObject: json, options: [])
                 req.httpMethod = "POST"
+
+                print("triggering rebuild for PR: #\(origin.target.number)")
+
+                if dryRun {
+                    decrement()
+                    return
+                }
 
                 URLSession.shared.dataTask(with: req) { data, res, err in
 
@@ -179,32 +211,23 @@ func rebuildIfNeededForEachTarget() {
 
             let jsons = try! JSONSerialization.jsonObject(with: data, options: []) as! [JSON]
 
-            let buildSlugs = jsons.compactMap { json -> String? in
+            let triggerBuildOrigins: [TriggerBuildOrigin] = jsons.compactMap { json -> TriggerBuildOrigin? in
 
                 let data = try! JSONSerialization.data(withJSONObject: json, options: [])
                 let status = try! decoder.decode(PRBuildStatus.self, from: data)
-                if status.state != "success" {
-                    return nil
-                }
-
-                let interval: Double = outdateInterval ?? 60 * 60 * 24
-                if abs(status.created_at.timeIntervalSinceNow) < interval {
-                    return nil
-                }
 
                 let buildSlug = status.target_url.split(separator: "/").last!
 
-                return String(buildSlug)
+                return TriggerBuildOrigin(target: target, buildSlug: String(buildSlug), status: status)
             }
 
-            if buildSlugs.isEmpty {
+            if triggerBuildOrigins.isEmpty {
                 decrement()
                 return
             }
 
             // trigger rebuild
-            print("triggering rebuild for PR: #\(target.number)")
-            triggerRebuild(buildSlugs)
+            triggerRebuild(triggerBuildOrigins)
         }.resume()
     }
 }
