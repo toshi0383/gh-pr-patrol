@@ -23,6 +23,7 @@ Currently supports only Bitrise. For other CI services, PRs are welcomed!
 
 - `-i interval` ... Current time minus interval is the threshold to determine if it's "outdated".
 - `-f [workflowID]` ... Specify comma separated workflowIDs which you want to trigger rebuild. Useful when multiple builds are triggered by single pull-request push.
+- `--dry-run` ... Do not actually trigger rebuild.
 
 # How to use
 `export` environment variables above and execute.
@@ -47,8 +48,8 @@ bash <(curl -sL https://raw.githubusercontent.com/toshi0383/scripts/master/swift
 
 # Development
 
-- Swift4+
-- Xcode9.3+
+- Swift4.2+
+- Xcode10.1+
 
 # License
 MIT
