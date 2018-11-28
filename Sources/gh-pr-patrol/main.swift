@@ -4,7 +4,7 @@
 import Foundation
 
 if ProcessInfo.processInfo.arguments.contains("-v") {
-    print("0.1.3")
+    print("0.1.4")
     exit(0)
 }
 
