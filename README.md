@@ -24,6 +24,8 @@ Currently supports only Bitrise. For other CI services, PRs are welcomed!
 - `-i interval` ... Current time minus interval is the threshold to determine if it's "outdated".
 - `-f [workflowID]` ... Specify comma separated workflowIDs which you want to trigger rebuild. Useful when multiple builds are triggered by single pull-request push.
 - `--dry-run` ... Do not actually trigger rebuild.
+- `--parallel-rebuild n` ... Allowed parallel number of requests for build trigger requests. Use this when you need to workaround parallel job limit on CI service side.
+  e.g. Bitrise allows to concurrent jobs to start, but looks like they started to kill the jobs when exceeding your parallel number limit.
 
 # How to use
 `export` environment variables above and execute.

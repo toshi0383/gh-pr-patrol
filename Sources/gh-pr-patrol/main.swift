@@ -4,7 +4,7 @@
 import Foundation
 
 if ProcessInfo.processInfo.arguments.contains("-v") {
-    print("0.1.4")
+    print("0.1.5")
     exit(0)
 }
 
@@ -74,6 +74,15 @@ let dryRun: Bool = {
     return args.contains("--dry-run")
 }()
 
+let parallelRebuildCount: Int? = {
+    let args = ProcessInfo.processInfo.arguments
+    if let index = args.firstIndex(of: "--parallel-rebuild") {
+        return index + 1 < args.count ? Int(args[index + 1]) : nil
+    }
+
+    return nil
+}()
+
 // - MARK: Utilities
 
 func ghRequest(forURLString string: String) -> URLRequest {
@@ -95,6 +104,13 @@ var targets: [Target] = []
 var counter: Int = 0
 var lock = NSLock()
 var isError = false
+
+let rebuildSemaphore: DispatchSemaphore? = {
+    if let count = parallelRebuildCount {
+        return DispatchSemaphore(value: count)
+    }
+    return nil
+}()
 
 func decrement() {
     lock.lock(); defer { lock.unlock() }
@@ -167,6 +183,8 @@ func triggerRebuild(_ triggerBuildOrigins: [TriggerBuildOrigin]) {
                     return
                 }
 
+                rebuildSemaphore?.wait()
+
                 URLSession.shared.dataTask(with: req) { data, res, err in
 
                     if let err = err {
@@ -183,6 +201,9 @@ func triggerRebuild(_ triggerBuildOrigins: [TriggerBuildOrigin]) {
                     }
 
                     decrement()
+
+                    rebuildSemaphore?.signal()
+
                 }.resume()
             }
         }
@@ -197,6 +218,7 @@ func rebuildIfNeededForEachTarget() {
         let url = URL(string: target.urlString)!
         var req = URLRequest(url: url)
         req.addValue("token \(ghApiToken)", forHTTPHeaderField: "Authorization")
+
         URLSession.shared.dataTask(with: req) { data, res, error in
             guard let data = data else {
                 print("failed to fetch data: \(String(describing: error))")
