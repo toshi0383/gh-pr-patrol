@@ -53,5 +53,9 @@ bash <(curl -sL https://raw.githubusercontent.com/toshi0383/scripts/master/swift
 - Swift4.2+
 - Xcode10.1+
 
+Set environment variables and arguments from Xcode. Make sure to set `--dry-run`.
+
+![xcode](https://github.com/toshi0383/assets/raw/master/gh-pr-patrol/xcode.png)
+
 # License
 MIT
