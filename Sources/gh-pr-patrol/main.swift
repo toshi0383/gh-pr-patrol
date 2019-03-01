@@ -36,21 +36,35 @@ struct TriggerBuildOrigin {
 
 // - MARK: Arguments and Environments
 
-let env = ProcessInfo.processInfo.environment
-guard let _ghRepo = env["GITHUB_REPOSITORY"],
-    let _ghApiToken: String = env["GITHUB_ACCESS_TOKEN"],
-    let _bitriseApiToken = env["BITRISE_API_TOKEN"],
-    let _bitriseBuildTriggerToken = env["BITRISE_BUILD_TRIGGER_TOKEN"],
-    let _appSlug = env["APP_SLUG"] else {
-        print("Error: missing required environment variable")
-        exit(1)
+struct Environment {
+    let ghRepo: String
+    let ghApiToken: String
+    let bitriseApiToken: String
+    let bitriseBuildTriggerToken: String
+    let appSlug: String
+
+    init(_ env: [String: String]) {
+        func getValue(_ key: String) -> String {
+            guard let value = env[key] else {
+                fatalError("Error: missing required environment variable: \(key)")
+            }
+            return value
+        }
+        ghRepo = getValue("GITHUB_REPOSITORY")
+        ghApiToken = getValue("GITHUB_ACCESS_TOKEN")
+        bitriseApiToken = getValue("BITRISE_API_TOKEN")
+        bitriseBuildTriggerToken = getValue("BITRISE_BUILD_TRIGGER_TOKEN")
+        appSlug = getValue("APP_SLUG")
+    }
 }
 
-let ghRepo = _ghRepo // Avoid compiler segmentation fault
-let appSlug = _appSlug // Avoid compiler segmentation fault
-let ghApiToken = _ghApiToken // Avoid compiler segmentation fault
-let bitriseApiToken = _bitriseApiToken // Avoid compiler segmentation fault
-let bitriseBuildTriggerToken = _bitriseBuildTriggerToken // Avoid compiler segmentation fault
+let env = Environment(ProcessInfo.processInfo.environment)
+
+let ghRepo = env.ghRepo
+let appSlug = env.appSlug
+let ghApiToken = env.ghApiToken
+let bitriseApiToken = env.bitriseApiToken
+let bitriseBuildTriggerToken = env.bitriseBuildTriggerToken
 
 let workflowFilters: [String]? = {
     let args = ProcessInfo.processInfo.arguments
