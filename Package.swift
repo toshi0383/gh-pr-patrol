@@ -14,6 +14,12 @@ let package = Package(
         // Targets can depend on other targets in this package, and on products in packages which this package depends on.
         .target(
             name: "gh-pr-patrol",
+            dependencies: ["Core"]),
+        .target(
+            name: "Core",
             dependencies: []),
+        .testTarget(
+            name: "CoreTests",
+            dependencies: ["Core"]),
     ]
 )

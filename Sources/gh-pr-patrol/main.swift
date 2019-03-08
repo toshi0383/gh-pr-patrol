@@ -1,6 +1,7 @@
 // 1. Get the last and non-fresh builds for each PR open.
 // 2. Trigger re-build
 
+import Core
 import Foundation
 
 if ProcessInfo.processInfo.arguments.contains("-v") {
@@ -45,8 +46,7 @@ func tryOrExit<T>(_ closure: @autoclosure () throws -> T) -> T {
 
 // - MARK: Arguments and Environments
 
-let data = try! JSONSerialization.data(withJSONObject: ProcessInfo.processInfo.environment, options: [])
-let env = tryOrExit(try JSONDecoder().decode(Environment.self, from: data))
+let env = tryOrExit(try Environment.decode(ProcessInfo.processInfo.environment))
 
 let ghRepo = env.ghRepo
 let appSlug = env.appSlug
