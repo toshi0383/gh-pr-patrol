@@ -34,31 +34,19 @@ struct TriggerBuildOrigin {
     let status: PRBuildStatus
 }
 
-// - MARK: Arguments and Environments
-
-struct Environment {
-    let ghRepo: String
-    let ghApiToken: String
-    let bitriseApiToken: String
-    let bitriseBuildTriggerToken: String
-    let appSlug: String
-
-    init(_ env: [String: String]) {
-        func getValue(_ key: String) -> String {
-            guard let value = env[key] else {
-                fatalError("Error: missing required environment variable: \(key)")
-            }
-            return value
-        }
-        ghRepo = getValue("GITHUB_REPOSITORY")
-        ghApiToken = getValue("GITHUB_ACCESS_TOKEN")
-        bitriseApiToken = getValue("BITRISE_API_TOKEN")
-        bitriseBuildTriggerToken = getValue("BITRISE_BUILD_TRIGGER_TOKEN")
-        appSlug = getValue("APP_SLUG")
+func tryOrExit<T>(_ closure: @autoclosure () throws -> T) -> T {
+    do {
+        return try closure()
+    } catch {
+        print("\(error)")
+        exit(0)
     }
 }
 
-let env = Environment(ProcessInfo.processInfo.environment)
+// - MARK: Arguments and Environments
+
+let data = try! JSONSerialization.data(withJSONObject: ProcessInfo.processInfo.environment, options: [])
+let env = tryOrExit(try JSONDecoder().decode(Environment.self, from: data))
 
 let ghRepo = env.ghRepo
 let appSlug = env.appSlug
