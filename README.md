@@ -1,5 +1,7 @@
 # gh-pr-patrol
 
+[![Build Status](https://app.bitrise.io/app/9b8da4c73f845d5f/status.svg?token=Gam6Rzr8NlFOqociuOFPiw&branch=master)](https://app.bitrise.io/app/9b8da4c73f845d5f)
+
 This tool keeps PR status-check results up-to-date.
 First it searches for **succeeded but outdated** pull-request status checks, then trigger rebuild for each unless the pull-request has `WIP` label.
 This way false-positives can be detected before merge, while ignoring positive-falses.
